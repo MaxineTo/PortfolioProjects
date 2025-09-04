@@ -29,11 +29,18 @@ where location = 'Mexico'
 order by 1,2
 
 -- Looking at Countries with highest infection rate compared to population
+--**Tableau Visualization
 
 Select Location, Population, MAX(total_cases) as HighestInfectionCount, MAX((total_cases/population))*100 as PercentPopulationInfected
 From ProjectPortfolio..CovidDeaths
 --where location = 'Mexico'
 Group by Population, Location
+order by PercentPopulationInfected desc
+
+Select Location, Population, date, MAX(total_cases) as HighestInfectionCount, MAX((total_cases/population))*100 as PercentPopulationInfected
+From ProjectPortfolio..CovidDeaths
+--where location = 'Mexico'
+Group by Population, Location, date
 order by PercentPopulationInfected desc
 
 -- Looking at countries with highest death count per population
@@ -62,6 +69,16 @@ Where continent is not null
 Group by continent
 order by PercentPopulationInfected desc
 
+--Per continent: TotalDeathCount
+--**Tableau Visualization
+
+SELECT location, SUM(CAST(new_deaths as int)) as TotalDeathCount
+FROM ProjectPortfolio..CovidDeaths
+WHERE continent IS NULL
+AND location NOT IN ('World', 'European Union','International')
+GROUP BY location
+ORDER BY TotalDeathCount desc
+
 -- GLOBAL NUMBERS: Global likelihood to die each die if you contracted covid
 
 Select date, SUM(new_cases) as TotalGlobalCases, SUM(cast(new_deaths as bigint)) as TotalGlobalDeaths, (SUM(cast(total_deaths as bigint))/SUM(total_cases))*100 as GlobalDeathPercentage
@@ -71,6 +88,7 @@ Group by date
 order by GlobalDeathPercentage desc
 
 -- Total cases worlwide:
+--**Tableau Visualization
 
 Select SUM(new_cases) as TotalGlobalCases, SUM(cast(new_deaths as bigint)) as TotalGlobalDeaths, (SUM(cast(total_deaths as bigint))/SUM(total_cases))*100 as GlobalDeathPercentage
 From ProjectPortfolio..CovidDeaths
@@ -136,13 +154,11 @@ FROM #PercentPopulationVaccinated
 ORDER BY Location
 
 -- Creating view to store data for later
-USE ProjectPortfolio
-GO
-CREATE VIEW PercentPopulationVaccinated 
-AS
+
+Create View PercentPopulationVaccinated as
 SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
-, SUM(CONVERT (INT, vac.new_vaccinations)) OVER (PARTITION by dea.Location ORDER BY dea.location, 
-     dea.date) AS RollingCountPPLVaccinated
+, SUM(CONVERT (int, vac.new_vaccinations)) OVER (PARTITION by dea.Location ORDER BY dea.location, 
+     dea.date) as RollingCountPPLVaccinated
 
 FROM ProjectPortfolio..CovidDeaths dea
 Join ProjectPortfolio..CovidVaccinations vac
@@ -150,9 +166,8 @@ Join ProjectPortfolio..CovidVaccinations vac
     and dea.date = vac.date
 WHERE dea.continent is not null
 
--- Is my view there?
-SELECT * FROM PercentPopulationVaccinated
-
+SELECT *
+FROM PercentPopulationVaccinated 
 
 
 
